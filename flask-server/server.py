@@ -1,44 +1,53 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-from osrsbox import items_api
+from cryptography.fernet import Fernet
 
-import json
-import base64
-import random
+import osrs
+
+items = osrs.load_items() #load all items before startup
+item_count = [{item: 0} for item in items] #create list with item name and count
+
+key = Fernet.generate_key() #generate encryption key
+fernet = Fernet(key)
 
 app = Flask(__name__)
 CORS(app)
 
-# run this code on loop for daily reset
-items = items_api.load()
-items_no_dup = {}
-   
-print("adding items to no dupes list")
-for i in items:
-    if i.name not in items_no_dup:
-        items_no_dup[i.name] = i.icon
-item = random.choice(list(items_no_dup.items()))
-
-item_str = item[1]
-decoded_image = open('./images/item_pic.jpeg', 'wb')
-decoded_image.write(base64.b64decode(item_str))
-decoded_image.close()
-#----------------
-#items API Route
+#item API Route
 @app.route("/item")
-def items():
+def get_random_item():
+    item = osrs.random_item(items)
     print(item[0])
-    return send_file('./images/item_pic.jpeg')
+    
+    encName = fernet.encrypt(item[0].encode())
 
+    return jsonify({"name": encName.decode("utf-8"), "img": item[1]})
+
+#guess check API Route
 @app.route("/guesscheck", methods = ['POST'])
 def guessCheck():
     guess = request.get_json()
+    name = guess["name"] # encrypted
     response = guess["guess"]
-
-    if response.lower() == item[0].lower():
-        return jsonify({'correct': True})
+    decName = fernet.decrypt(name).decode()
+    value = -1
+    keysList = []
+    if response.lower() == decName.lower():
+        for dict in item_count:
+            if dict.get(decName) != None:
+                
+                value = dict.get(decName)
+                value += 1 # update value
+                dict[decName] = value
+        return jsonify({'correct': True, 'count': value})
     else:
-        return jsonify({'correct': False})
+        for dict in item_count:
+            if dict.get(decName) != None:
+                
+                value = dict.get(decName)
+                
+                dict[decName] = value
+        return jsonify({'correct': False, 'count': value})
     
 
 if __name__ == "__main__":

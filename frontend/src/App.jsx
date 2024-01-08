@@ -24,7 +24,7 @@ function App() {
         <section>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path='/items' element={<ItemsPage/>}/>
+            <Route path='/item' element={<ItemsPage/>}/>
           </Routes>
         </section>
       

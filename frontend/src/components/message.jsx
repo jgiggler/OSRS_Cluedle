@@ -1,10 +1,15 @@
 import React from 'react';
 
-function Message({isCorrect}){
+function Message({isCorrect, count}){
     if (isCorrect){
-        return <p>WINNER!!!</p>
+        return <p>
+            Nice Job!
+            This item has been guessed correctly {count} times!</p>
+            
     }
-    return <p>SUCK FAILURE FREAK!</p>
+    return <p>
+        Sorry, Try Again!
+        This item has been guessed correctly {count} times!</p>
 
 }
 
